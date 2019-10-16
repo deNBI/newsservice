@@ -1,5 +1,12 @@
 ##  (2019-10-16)
 
+
+### Features
+
+* **root-url:**  uses application_root as prefix for url
+
+##  (2019-10-16)
+
 ### Features
 
 * **Docker:** Add Dockerfile and docker-compose.yml
