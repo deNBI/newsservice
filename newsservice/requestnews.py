@@ -5,6 +5,14 @@ from flask import (Blueprint, request)
 
 bp = Blueprint('request', __name__)
 
+ID = "id"
+TAG = "tag"
+AUTHOR = "author"
+TITLE = "title"
+TEXT = "text"
+OLDER = "older"
+NEWER = "newer"
+FACILITY_ID = "facilityid"
 
 @bp.route('/requestnews', methods=['GET', 'POST'])
 def requestdb():
@@ -17,29 +25,26 @@ def requestdb():
     data = []
     articles = News.query.all()
 
-    if request.json['id'] != "":
-        articles = [article for article in articles if str(article.id) == request.json['id']]
+    filter_json = json.loads(request.data.decode('utf-8'))
 
-    if request.json['tag'] != "":
-        articles = [article for article in articles if article.tag == request.json['tag']]
-
-    if request.json['author'] != "":
-        articles = [article for article in articles if request.json['author'] in article.author]
-
-    if request.json['title'] != "":
-        articles = [article for article in articles if request.json['title'] in article.title]
-
-    if request.json['text'] != "":
-        articles = [article for article in articles if request.json['text'] in article.text]
-
-    if request.json['facilityid'] != "":
-        articles = [article for article in articles if request.json['facilityid'] in article.facilityid]
-
-    if request.json['older'] != "":
-        articles = [article for article in articles if article.time <= request.json['older']]
-
-    if request.json['newer'] != "":
-        articles = [article for article in articles if article.time >= request.json['newer']]
+    for key, value in filter_json.items():
+        if value != "":
+            if key == ID:
+                articles = [article for article in articles if str(article.id) == value]
+            if key == TAG:
+                articles = [article for article in articles if article.tag == value]
+            if key == AUTHOR:
+                articles = [article for article in articles if value in article.author]
+            if key == TITLE:
+                articles = [article for article in articles if value in article.title]
+            if key == TEXT:
+                articles = [article for article in articles if value in article.text]
+            if key == FACILITY_ID:
+                articles = [article for article in articles if value in article.facilityid]
+            if key == OLDER:
+                articles = [article for article in articles if article.time <= value]
+            if key == NEWER:
+                articles = [article for article in articles if article.time >= value]
 
     for article in articles:
         data.insert(0, {'id': article.id, 'title': article.title, 'author': article.author, 'time': article.time, 'tag': article.tag,
