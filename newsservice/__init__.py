@@ -1,4 +1,7 @@
 import os
+
+from werkzeug.middleware.dispatcher import DispatcherMiddleware
+
 from newsservice.db import db_session, init_db
 from flask_bootstrap import Bootstrap
 
@@ -29,6 +32,10 @@ def config_flask(app, config_path):
         app.config.from_pyfile(DEFAULT_CONFIG, silent=True)
         app.config.from_pyfile(config_path)
 
+    # dispatcher needed so that all urls are accessed under APPLICATION_ROOT when inside wsgi container (e.g. gunicorn)
+    # dummy_app could handle 404 errors
+    app.wsgi_app = DispatcherMiddleware(Flask('dummy_app'), {app.config['APPLICATION_ROOT']: app.wsgi_app})
+
     secret_key = os.environ.get('SECRET_KEY', 'dev')
     app.config['SECRET_KEY'] = secret_key
 
@@ -44,7 +51,7 @@ def create_app(config_path=None):
     This Method initializes the Flask Application and uses the default config file.
     It imports the other Python Methods with Blueprints.
     it was implemented with the help of the official flask tutorial: https://flask.palletsprojects.com/en/1.1.x/tutorial/
-    :param config:
+    :param config_path: Path to config. Will overwrite default config.
     :return: Returns the Flask Application
     """
 
