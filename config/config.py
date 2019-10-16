@@ -1,1 +1,2 @@
 SECRET_KEY = 'dev'
+APPLICATION_ROOT = '/news'
