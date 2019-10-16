@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from sqlalchemy import Column, Integer, String
 from newsservice.db import Base
 
@@ -12,10 +14,10 @@ class News(Base):
     tag = Column(String(50))
     facilityid = Column(String(2000))
 
-    def __init__(self, title, author, time, text, tag, facilityid):
+    def __init__(self, title, author, text, tag, facility_id):
         self.title = title
         self.author = author
-        self.time = time
+        self.time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         self.text = text
         self.tag = tag
-        self.facilityid = facilityid
+        self.facilityid = facility_id

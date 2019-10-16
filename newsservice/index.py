@@ -16,7 +16,6 @@ def isonline():
         conn.request("HEAD", "/")
         r1 = conn.getresponse()
         if int(r1.status) == 302:
-            print(r1.status)
             return "online"
         else:
             return "offline"
