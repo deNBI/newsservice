@@ -1,26 +1,44 @@
 from flask import render_template
-import http.client
 from newsservice.models import News
 from flask import (Blueprint)
+
+import requests
 
 bp = Blueprint('index', __name__)
 
 
-def isonline():
+def check_cc_sites_status():
     """
-    checks if "openstack.cebitec.uni-bielefeld.de" is accessible
-    :return: a string which says either "online" or "offline"
+    checks if all compute center sites in config are accessible
+    :return: an json array
     """
     try:
-        conn = http.client.HTTPConnection("openstack.cebitec.uni-bielefeld.de")
-        conn.request("HEAD", "/")
-        r1 = conn.getresponse()
-        if int(r1.status) == 302:
-            return "online"
-        else:
-            return "offline"
-    except IOError:
-        return "offline"
+        from config import config
+        cc_sites = config.CC_SITES
+    except:
+        return []
+    sites = {}
+    for location, url in cc_sites.items():
+        get_status(location, url, sites)
+    return sites
+
+
+def get_status(location, cc_url, sites):
+    try:
+        response = requests.head(cc_url, timeout=5)
+        #status_code = response.status_code
+        #reason = response.reason
+        sites.update({location: {
+            'url': cc_url,
+            'status': 0
+        }})
+    except requests.exceptions.ConnectionError:
+        #status_code = '000'
+        #reason = 'ConnectionError'
+        sites.update({location: {
+            'url': cc_url,
+            'status': 1
+        }})
 
 
 @bp.route('/')
@@ -30,5 +48,5 @@ def render():
     :return:
     """
 
-    online = isonline()
-    return render_template("index.html", news=News.query.order_by(News.id.desc()).limit(30), online=online)
+    sites = check_cc_sites_status()
+    return render_template("index.html", news=News.query.order_by(News.id.desc()).limit(30), cc_sites=sites)

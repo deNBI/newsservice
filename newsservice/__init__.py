@@ -10,42 +10,6 @@ from flask import Flask
 DEFAULT_CONFIG = '../config/config.py'
 
 
-def register_blueprints(app):
-    from newsservice import index
-    app.register_blueprint(index.bp)
-
-    from newsservice import savenews
-    app.register_blueprint(savenews.bp)
-
-    from newsservice import requestnews
-    app.register_blueprint(requestnews.bp)
-
-    from newsservice import latestnews
-    app.register_blueprint(latestnews.bp)
-
-
-def config_flask(app, config_path):
-    if config_path is None:
-        # load the instance config, if it exists, when not testing
-        app.config.from_pyfile(DEFAULT_CONFIG, silent=True)
-    else:
-        app.config.from_pyfile(DEFAULT_CONFIG, silent=True)
-        app.config.from_pyfile(config_path)
-
-    # dispatcher needed so that all urls are accessed under APPLICATION_ROOT when inside wsgi container (e.g. gunicorn)
-    # dummy_app could handle 404 errors
-    app.wsgi_app = DispatcherMiddleware(Flask('dummy_app'), {app.config['APPLICATION_ROOT']: app.wsgi_app})
-
-    secret_key = os.environ.get('SECRET_KEY', 'dev')
-    app.config['SECRET_KEY'] = secret_key
-
-    # ensure the instance folder exists
-    try:
-        os.makedirs(app.instance_path)
-    except OSError:
-        pass
-
-
 def create_app(config_path=None):
     """
     This Method initializes the Flask Application and uses the default config file.
@@ -65,8 +29,53 @@ def create_app(config_path=None):
 
     register_blueprints(app)
 
+    # if app.config['CC_SITES']:
+    #    register_cc_sites(app)
+
     @app.teardown_appcontext
     def shutdown_session(exception=None):
         db_session.remove()
 
     return app
+
+
+def config_flask(app, config_path):
+    if config_path is None:
+        # load only the default config
+        app.config.from_pyfile(DEFAULT_CONFIG, silent=True)
+    else:
+        # load default config and overwrite with config from path
+        app.config.from_pyfile(DEFAULT_CONFIG, silent=True)
+        app.config.from_pyfile(config_path)
+
+    # dispatcher needed so that all urls are accessed under APPLICATION_ROOT when inside wsgi container (e.g. gunicorn)
+    # dummy_app could handle 404 errors
+    app.wsgi_app = DispatcherMiddleware(Flask('dummy_app'), {app.config['APPLICATION_ROOT']: app.wsgi_app})
+
+    secret_key = os.environ.get('SECRET_KEY', 'dev')
+    app.config['SECRET_KEY'] = secret_key
+
+    # ensure the instance folder exists
+    try:
+        os.makedirs(app.instance_path)
+    except OSError:
+        pass
+
+
+def register_blueprints(app):
+    from newsservice import index
+    app.register_blueprint(index.bp)
+
+    from newsservice import savenews
+    app.register_blueprint(savenews.bp)
+
+    from newsservice import requestnews
+    app.register_blueprint(requestnews.bp)
+
+    from newsservice import latestnews
+    app.register_blueprint(latestnews.bp)
+
+
+def register_cc_sites(app):
+    from config import config
+    config.CC_SITES = app.config['CC_SITES']
