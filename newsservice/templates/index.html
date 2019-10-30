@@ -1,35 +1,47 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
-  <head>
+<head>
     <meta charset="utf-8">
     <title>Message of the Day</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='index.css') }}"
-     type="text/css" media="screen" charset="utf-8" />
+          type="text/css" media="screen" charset="utf-8" />
     <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
-  </head>
-  <body>
-    <div class="header">
-        <img alt="cloud" src="{{ url_for('static', filename='symbol-cloud.png') }}" style="width:128px;height:128px;">
-        <h2>de.NBI Cloud</h2>
-    </div>
-    <div class="banner">
-        <h1>Message of the Day</h1>
-    </div>
+</head>
+<body>
+<div class="header">
+    <img alt="cloud" src="{{ url_for('static', filename='symbol-cloud.png') }}" style="width:128px;height:128px;">
+    <h2>de.NBI Cloud</h2>
+</div>
+<div class="banner">
+    <h1>Message of the Day</h1>
+</div>
 
-    <div class="column">
-      <div class="onlinestatus">
-        <div class="box green">
-          <h2> openstack.cebitec.uni-bielefeld.de is {{ online }}</h2>
+<div class="column">
+{% if cc_sites %}
+    {% for location, values in cc_sites.items() %}
+        <div class="onlinestatus">
+            {% if values['status'] == 0 %}
+                <div class="box green">
+                    <h2> {{ location }} at {{ values['url'] }} is online</h2>
+                </div>
+            {% else %}
+                <div class="box red">
+                    <h2> {{ location }} at {{ values['url'] }} is offline</h2>
+                </div>
+            {% endif %}
         </div>
-      </div>
-      {% for article in news  %}
+    {% endfor %}
+{% endif %}
+{% if news %}
+    {% for article in news  %}
         <div class="card">
-          <h1>{{ article.title }}</h1>
-          <div>{{ article.text }}</div>
-          <h6>{{ article.author }} on {{ article.time }}    </h6>
+            <h1>{{ article.title }}</h1>
+            <div>{{ article.text }}</div>
+            <h6>{{ article.author }} on {{ article.time }}    </h6>
         </div>
-        {% endfor %}
-      </div>
+    {% endfor %}
+{% endif %}
+</div>
 
-    </body>
+</body>
 </html>

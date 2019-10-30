@@ -1,3 +1,17 @@
+##  (2019-10-30)
+
+### Features
+
+* **compute-center:** new table for computer-centers. add name and url to config
+
+### Refactors
+
+* **index:** delete cc_site db, get from config, diff. check online method
+
+* **readme:** change readme
+
+* **cc-sites:** remove online status of sites
+
 ##  (2019-10-16)
 
 
