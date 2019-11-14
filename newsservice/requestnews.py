@@ -1,7 +1,8 @@
 import json
+import sys
 from newsservice.models import News
 
-from flask import (Blueprint, request)
+from flask import (Blueprint, request, jsonify)
 
 bp = Blueprint('request', __name__)
 
@@ -14,7 +15,8 @@ OLDER = "older"
 NEWER = "newer"
 FACILITY_ID = "facilityid"
 
-@bp.route('/requestnews', methods=['GET', 'POST'])
+
+@bp.route('/requestnews/json', methods=['GET'])
 def requestdb():
     """
     This Method receives filter values as a JSON and uses these to make queries at the database.
@@ -22,6 +24,7 @@ def requestdb():
     Then it converts the list to a JSON document.
     :return: JSON document containing all database entries which matches the filter values.
     """
+
     data = []
     articles = News.query.all()
 
@@ -51,3 +54,39 @@ def requestdb():
                         'text': article.text, 'facilityid': article.facilityid})
 
     return json.dumps(data)
+
+
+@bp.route('/request', methods=['GET'])
+def request_values_json():
+    return jsonify(json_list=[i.serialize for i in request_values(request)])
+
+
+def request_values(_request):
+    id = _request.args.get(ID, type=int, default=None)
+    tag = _request.args.get(TAG, type=str, default='')
+    author = _request.args.get(AUTHOR, type=str, default='')
+    title = _request.args.get(TITLE, type=str, default='')
+    text = _request.args.get(TEXT, type=str, default='')
+    facility_id = _request.args.get(FACILITY_ID, type=str, default='')
+    older = _request.args.get(OLDER, type=int, default=sys.maxsize)
+    newer = _request.args.get(NEWER, type=int, default=-sys.maxsize)
+
+    queries = [News.tag.contains(tag),
+               News.author.contains(author),
+               News.title.contains(title),
+               News.text.contains(text),
+               News.facilityid.contains(facility_id),
+               News.time <= older,
+               News.time >= newer]
+
+    if id is not None:
+        queries.append(News.id == id)
+
+    articles = News.query.filter(*queries).all()
+
+    return articles
+
+
+def request_facility_news(facility_id):
+    articles = News.query.filter(News.facilityid.contains(facility_id)).order_by(News.id.desc()).all()
+    return articles

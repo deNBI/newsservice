@@ -17,30 +17,30 @@
 </div>
 
 <div class="column">
-{% if cc_sites %}
-    {% for location, values in cc_sites.items() %}
-        <div class="onlinestatus">
-            {% if values['status'] == 0 %}
-                <div class="box green">
-                    <h2> {{ location }} at {{ values['url'] }} is online</h2>
-                </div>
-            {% else %}
-                <div class="box red">
-                    <h2> {{ location }} at {{ values['url'] }} is offline</h2>
-                </div>
-            {% endif %}
-        </div>
-    {% endfor %}
-{% endif %}
-{% if news %}
-    {% for article in news  %}
-        <div class="card">
-            <h1>{{ article.title }}</h1>
-            <div>{{ article.text }}</div>
-            <h6>{{ article.author }} on {{ article.time }}    </h6>
-        </div>
-    {% endfor %}
-{% endif %}
+    {% if cc_sites %}
+        {% for location, values in cc_sites.items() %}
+            <div class="onlinestatus">
+                {% if values['status'] == 0 %}
+                    <div class="box green">
+                        <h2> {{ location }} at {{ values['url'] }} is online</h2>
+                    </div>
+                {% else %}
+                    <div class="box red">
+                        <h2> {{ location }} at {{ values['url'] }} is offline</h2>
+                    </div>
+                {% endif %}
+            </div>
+        {% endfor %}
+    {% endif %}
+    {% if news %}
+        {% for article in news  %}
+            <div class="card">
+                <h1>{{ article.title }}</h1>
+                <div>{{ article.text }}</div>
+                <h6>{{ article.author }} on {{ article.time }}    </h6>
+            </div>
+        {% endfor %}
+    {% endif %}
 </div>
 
 </body>
