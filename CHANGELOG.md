@@ -1,3 +1,9 @@
+##  (2019-11-14)
+
+### Features
+
+* **news:** * refactor(methods): more tags, more methods
+
 ##  (2019-10-30)
 
 ### Features

@@ -15,7 +15,7 @@ FIDS = "facility-ids"
 TOKEN = "perun-login-token"
 
 
-@bp.route('/savenews', methods=['GET', 'POST'])
+@bp.route('/', methods=['POST'])
 def save():
     """
     This Method receives a News and a Authentication Token via JSON document. If the check with auth() was successful it

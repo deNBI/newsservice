@@ -4,6 +4,8 @@ services:
     build:
        context: .
        dockerfile: Dockerfile
+    volumes:
+      - ./news.sqlite3:/app/news.sqlite3
     ports:
      - "5000:5000"
     command: gunicorn -b 0.0.0.0:5000 "newsservice:create_app()"
