@@ -49,7 +49,7 @@ def config_flask(app, config_path):
         app.config.from_pyfile(config_path)
 
     # dispatcher needed so that all urls are accessed under APPLICATION_ROOT when inside wsgi container (e.g. gunicorn)
-    # dummy_app could handle 404 errors
+    # dummy_app could handle 404 errors if implemented
     app.wsgi_app = DispatcherMiddleware(Flask('dummy_app'), {app.config['APPLICATION_ROOT']: app.wsgi_app})
 
     secret_key = os.environ.get('SECRET_KEY', 'dev')
@@ -66,14 +66,8 @@ def register_blueprints(app):
     from newsservice import index
     app.register_blueprint(index.bp)
 
-    from newsservice import savenews
-    app.register_blueprint(savenews.bp)
-
-    from newsservice import requestnews
-    app.register_blueprint(requestnews.bp)
-
-    from newsservice import latestnews
-    app.register_blueprint(latestnews.bp)
+    from newsservice import request_manager
+    app.register_blueprint(request_manager.bp)
 
 
 def register_cc_sites(app):
