@@ -9,10 +9,10 @@ body {
 
 /* Header/Blog Title */
 .header {
-  width:98vw;
+  width: auto;
   background-color: white;
-  height: 50px !important;
-  margin:25px;
+  height: auto !important;
+  margin: 50px;
   display: flex;
   color: #005aa9;
   border-radius: 10px;
