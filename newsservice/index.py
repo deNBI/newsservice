@@ -1,6 +1,6 @@
 from flask import render_template
+
 from newsservice.models import News
-from newsservice.requestnews import request_facility_news, request_values
 from flask import (Blueprint, request)
 
 import requests
@@ -48,17 +48,34 @@ def render():
     This method renders the HTML website including the isOnline Status and the last 30 database entries.
     :return:
     """
-    articles = request_values(request)
-    sites = check_cc_sites_status()
+    #    sites = check_cc_sites_status()
+    queries = News.get_all_queries_by_request(request)
+    articles = News.query \
+        .filter(*queries) \
+        .order_by(News.id.desc())\
+        .limit(30)\
+        .all()
 
-    return render_template("index.html", news=articles, cc_sites=sites)
+    return render_template("index.html", news=articles, cc_sites=None)
 
 
-@bp.route('/<facility_id>')
+@bp.route('/<tags>')
+def render_tag(tags):
+    articles = News.query \
+        .filter(*News.get_tag_queries(tags)) \
+        .order_by(News.id.desc()) \
+        .all()
+    return render_template("index.html", news=articles, cc_sites=None)
+
+
+@bp.route('/facility/<facility_id>')
 def render_facility(facility_id):
     """
     This method renders the HTML website with news for facility-id.
     :return:
     """
-
-    return render_template("index.html", news=request_facility_news(facility_id=facility_id), cc_sites=None)
+    articles = News.query \
+        .filter(*News.get_facility_queries(facility_id)) \
+        .order_by(News.id.desc()) \
+        .all()
+    return render_template("index.html", news=articles, cc_sites=None)
