@@ -93,65 +93,40 @@ def request_values_as_json():
     return jsonify(json_list=[i.serialize for i in articles])
 
 
-@bp.route('/<tags>/latest-string')
-def request_latest_news_by_tag_as_string(tags):
+@bp.route('/<tags>/latest')
+def request_latest_news_by_tag(tags):
     article = News.query \
         .filter(*News.get_tag_queries(tags)) \
         .order_by(News.id.desc()) \
         .first()
-    if article is None:
-        return ''
-    latestnews = '{0}\n{1}\nBy {2} on {3}\n'.format(article.title, article.text, article.author, article.time)
-    return latestnews
+    if request.content_type == 'application/json':
+        if article is None:
+            return {}
+        return json.dumps(dict(title=article.title, text=article.text,
+                               author=article.author, time=article.time))
+    else:
+        if article is None:
+            return ''
+        return '{0}\n{1}\nBy {2} on {3}\n'.format(article.title, article.text, article.author, article.time)
 
 
-@bp.route('/<tags>/latest-json')
-def request_latest_news_by_tag_as_json(tags):
-    """
-    This Method queries the last item of the database and convert it to a string.
-    :return: A String with the last item of the database
-    """
-    article = News.query \
-        .filter(*News.get_tag_queries(tags)) \
-        .order_by(News.id.desc()) \
-        .first()
-    if article is None:
-        return {}
-    latest_news = dict(title=article.title, text=article.text,
-                       author=article.author, time=article.time)
-
-    return json.dumps(latest_news)
-
-
-@bp.route('/latest-string', methods=['GET'])
+@bp.route('/latest', methods=['GET'])
 def request_latest_news_as_string():
     """
     This Method queries the last item of the database and convert it to a string.
     :return: A String with the last item of the database
     """
     article = News.query.order_by(News.id.desc()).first()
-    if article is None:
-        return 'NA'
+    if request.content_type == 'application/json':
+        if article is None:
+            return {}
+        return json.dumps(dict(title=article.title, text=article.text,
+                               author=article.author, time=article.time))
+    else:
+        if article is None:
+            return 'NA'
 
-    latestnews = '{0}\n{1}\nBy {2} on {3}\n'.format(article.title, article.text, article.author, article.time)
-
-    return latestnews
-
-
-@bp.route('/latest-json', methods=['GET'])
-def request_latest_news_as_json():
-    """
-    This Method queries the last item of the database and convert it to a string.
-    :return: A String with the last item of the database
-    """
-    article = News.query.order_by(News.id.desc()).first()
-    if article is None:
-        return 'NA'
-
-    latestnews = dict(title=article.title, text=article.text,
-                      author=article.author, time=article.time)
-
-    return json.dumps(latestnews)
+        return '{0}\n{1}\nBy {2} on {3}\n'.format(article.title, article.text, article.author, article.time)
 
 
 def check_if_all_facilities_true(facilityids, token):
