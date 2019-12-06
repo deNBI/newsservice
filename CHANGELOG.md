@@ -1,3 +1,10 @@
+##  (2019-12-06)
+
+
+#### Features
+
+* **style:**  added de.NBI-Styling to news front-page ([0a6a8ba5](0a6a8ba5))
+
 ##  (2019-11-14)
 
 ### Features
