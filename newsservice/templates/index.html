@@ -2,18 +2,19 @@
 <html lang="en" dir="ltr">
 <head>
     <meta charset="utf-8">
-    <title>Message of the Day</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='index.css') }}"
-          type="text/css" media="screen" charset="utf-8" />
-    <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+    <title>de.NBI Cloud News</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" type="text/css">
+    <div class="header">
+        <div style="margin: auto">
+            <a href="https://cloud.denbi.de" style="margin: 5px;">
+                <img alt="de.NBI Cloud" src="https://cloud.denbi.de/wp-content/uploads/2019/05/denbi-logo-color.svg" style="width:300px; margin:5px; position:center;">
+            </a>
+        </div>
+    </div>
 </head>
 <body>
-<div class="header">
-    <img alt="cloud" src="{{ url_for('static', filename='symbol-cloud.png') }}" style="width:128px;height:128px;">
-    <h2>de.NBI Cloud</h2>
-</div>
 <div class="banner">
-    <h1>Message of the Day</h1>
+    <h1>Messages</h1>
 </div>
 
 <div class="column">
