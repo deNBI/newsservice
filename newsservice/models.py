@@ -125,6 +125,33 @@ class News(Base):
         newer = request.args.get(News.NEWER, type=int, default=-sys.maxsize)
         return News.get_all_queries(news_id, author, title, text, tags, facility_id, older, newer)
 
+    def update(self, title, text, tag, facility_id):
+        self.title = title
+        self.text = text
+        self.tag = []
+        self.facilityid = []
+        for new_tag in tag:
+            new_tag = new_tag.strip()
+            if new_tag == '':
+                continue
+            try:
+                existing_tag = Tag.query.filter_by(name=new_tag).all()
+                if len(existing_tag) > 0:
+                    self.tag.extend(existing_tag)
+                else:
+                    self.tag.append(Tag(new_tag))
+            except Exception as e:
+                print(e)
+        for new_facility in facility_id:
+            try:
+                existing_facility = Facility.query.filter_by(facility_id=new_facility).all()
+                if len(existing_facility) > 0:
+                    self.facilityid.extend(existing_facility)
+                else:
+                    self.facilityid.append(Facility(new_facility))
+            except Exception as e:
+                print(e)
+
 
 class Tag(Base):
     __tablename__ = 'tag'
