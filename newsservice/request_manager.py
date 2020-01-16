@@ -83,6 +83,50 @@ def delete():
     return 'True'
 
 
+@bp.route('/', methods=['PATCH'])
+def patch():
+    news_id = None
+    title = None
+    text = None
+    tag = None
+    fids = None
+    token = None
+    try:
+        news_id = json.loads(request.data.decode('utf-8'))[News.ID]
+        title = json.loads(request.data.decode('utf-8'))[News.TITLE]
+        text = json.loads(request.data.decode('utf-8'))[News.TEXT]
+        tag = json.loads(request.data.decode('utf-8'))[News.TAG]
+        fids = json.loads(request.data.decode('utf-8'))[News.FACILITY_ID]
+        token = json.loads(request.data.decode('utf-8'))[News.TOKEN]
+    except Exception as e:
+        print(e)
+
+    if news_id is None or token is None or title is None or text is None or tag is None or fids is None:
+        try:
+            news_id = request.json[News.ID]
+            title = request.json[News.TITLE]
+            text = request.json[News.TEXT]
+            tag = request.json[News.TAG]
+            fids = request.json[News.FACILITY_ID]
+            token = request.json[News.TOKEN]
+            if news_id is None or token is None or title is None or text is None or tag is None or fids is None:
+                return 'No news id or token or title or text or tag or facility id found in request.'
+        except Exception as e:
+            print(e)
+            return "Something went wrong in reading the request. Returning."
+
+    article = News.query.filter(News.id == news_id).first()
+    if article is None:
+        return 'No article found.'
+    news_facility_ids = check_if_all_facilities_true([facility.facility_id for facility in article.facilityid], token)
+    if not news_facility_ids or len(news_facility_ids) == 0:
+        article.update(title, text, tag, fids)
+        db_session.commit()
+        return "The article: '{0}' was patched.".format(article.title)
+    else:
+        return 'Not patched. Authentication failed for: {0}'.format(','.join(fids))
+
+
 @bp.route('/request', methods=['GET'])
 def request_values_as_json():
     queries = News.get_all_queries_by_request(request)

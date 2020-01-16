@@ -37,7 +37,7 @@
         {% for article in news  %}
             <div class="card">
                 <h1>{{ article.title }}</h1>
-                <div>{{ article.text }}</div>
+                <pre style="white-space: pre-wrap;">{{ article.text }}</pre>
                 <h6>{{ article.author }} on {{ article.time }}    </h6>
             </div>
         {% endfor %}
