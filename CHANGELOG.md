@@ -1,3 +1,10 @@
+##  (2020-01-15)
+
+
+#### Features
+
+* **patch:**  news patchable ([5eb68fd3](5eb68fd3))
+
 ##  (2019-12-06)
 
 
