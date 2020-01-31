@@ -68,6 +68,12 @@ def render_tag(tags):
     return render_template("index.html", news=articles, cc_sites=None)
 
 
+@bp.route('/id/<id>')
+def render_id(id):
+    articles = News.query.filter(News.id == id).all()
+    return render_template("index.html", news=articles, cc_sites=None)
+
+
 @bp.route('/facility/<facility_id>')
 def render_facility(facility_id):
     """

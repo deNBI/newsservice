@@ -1,7 +1,7 @@
 import sys
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, String, Table, ForeignKey
+from sqlalchemy import Column, Integer, String, Table, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 
 from newsservice.db import Base
@@ -19,6 +19,7 @@ news_facility = Table('news_facility', Base.metadata,
 class News(Base):
     ID = "id"
     TAG = "tag"
+    MOTD = "motd"
     AUTHOR = "author"
     TITLE = "title"
     TEXT = "text"
@@ -31,16 +32,18 @@ class News(Base):
     id = Column(Integer, primary_key=True)
     title = Column(String(500))
     author = Column(String(300))
-    time = Column(String(300))
+    time = Column(DateTime())
     text = Column(String(5000))
+    motd = Column(String(5000), nullable=True)
     tag = relationship("Tag", secondary="news_tag", backref='news')
     facilityid = relationship("Facility", secondary="news_facility", backref='news')
 
-    def __init__(self, title, author, text, tag, facility_id):
+    def __init__(self, title, author, text, tag, facility_id, motd):
         self.title = title
         self.author = author
-        self.time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        self.time = datetime.now()
         self.text = text
+        self.motd = motd
         for new_tag in tag:
             new_tag = new_tag.strip()
             if new_tag == '':
@@ -70,64 +73,17 @@ class News(Base):
             'id': self.id,
             'title': self.title,
             'author': self.author,
-            'time': self.time,
+            'time': self.time.strftime('%Y-%m-%d %H:%M:%S'),
             'text': self.text,
+            'motd': self.motd,
             'tag': [tag.name for tag in self.tag],
             'facility_id': [facility.facility_id for facility in self.facilityid]
         }
 
-    @staticmethod
-    def get_tag_queries(tags):
-        queries = []
-        tags = tags.split(',')
-        for search_tag in tags:
-            queries.append(News.tag.any(name=search_tag))
-        return queries
-
-    @staticmethod
-    def get_facility_queries(facility_id):
-        queries = []
-        facility_id = facility_id.split(',')
-        for search_facility_id in facility_id:
-            try:
-                search_facility_id = int(search_facility_id)
-            except:
-                search_facility_id = -1
-            queries.append(News.facilityid.any(facility_id=search_facility_id))
-        return queries
-
-    @staticmethod
-    def get_all_queries(news_id=None, author='', title='', text='', tags='', facility_id='',
-                        older=sys.maxsize, newer=-sys.maxsize):
-        queries = [News.author.contains(author),
-                   News.title.contains(title),
-                   News.text.contains(text),
-                   News.time <= older,
-                   News.time >= newer]
-
-        if tags != '':
-            queries.extend(News.get_tag_queries(tags))
-        if facility_id != '':
-            queries.extend(News.get_facility_queries(facility_id))
-        if news_id is not None:
-            queries.append(News.id == news_id)
-        return queries
-
-    @staticmethod
-    def get_all_queries_by_request(request):
-        news_id = request.args.get(News.ID, type=int, default=None)
-        tags = request.args.get(News.TAG, type=str, default='')
-        author = request.args.get(News.AUTHOR, type=str, default='')
-        title = request.args.get(News.TITLE, type=str, default='')
-        text = request.args.get(News.TEXT, type=str, default='')
-        facility_id = request.args.get(News.FACILITY_ID, type=str, default='')
-        older = request.args.get(News.OLDER, type=int, default=sys.maxsize)
-        newer = request.args.get(News.NEWER, type=int, default=-sys.maxsize)
-        return News.get_all_queries(news_id, author, title, text, tags, facility_id, older, newer)
-
-    def update(self, title, text, tag, facility_id):
+    def update(self, title, text, motd, tag, facility_id):
         self.title = title
         self.text = text
+        self.motd = motd
         self.tag = []
         self.facilityid = []
         for new_tag in tag:
@@ -151,6 +107,61 @@ class News(Base):
                     self.facilityid.append(Facility(new_facility))
             except Exception as e:
                 print(e)
+
+    @staticmethod
+    def get_tag_queries(tags):
+        queries = []
+        tags = tags.split(',')
+        for search_tag in tags:
+            queries.append(News.tag.any(name=search_tag))
+        return queries
+
+    @staticmethod
+    def get_facility_queries(facility_id):
+        queries = []
+        facility_id = facility_id.split(',')
+        for search_facility_id in facility_id:
+            try:
+                search_facility_id = int(search_facility_id)
+            except:
+                search_facility_id = -1
+            queries.append(News.facilityid.any(facility_id=search_facility_id))
+        return queries
+
+    @staticmethod
+    def get_all_queries(news_id=None, author=None, title=None, text=None, motd=None, tags=None, facility_id=None,
+                        older=sys.maxsize, newer=-sys.maxsize):
+        queries = []
+        if author is not None:
+            queries.append(News.author.contains(author))
+        if title is not None:
+            queries.append(News.title.contains(title))
+        if text is not None:
+            queries.append(News.text.contains(text))
+        if motd is not None:
+            queries.append(News.motd.contains(motd))
+        if tags is not None:
+            queries.extend(News.get_tag_queries(tags))
+        if facility_id is not None:
+            queries.extend(News.get_facility_queries(facility_id))
+        if news_id is not None:
+            queries.append(News.id == news_id)
+        queries.append(News.time <= older)
+        queries.append(News.time >= newer)
+        return queries
+
+    @staticmethod
+    def get_all_queries_by_request(request):
+        news_id = request.args.get(News.ID, type=int, default=None)
+        tags = request.args.get(News.TAG, type=str, default=None)
+        author = request.args.get(News.AUTHOR, type=str, default=None)
+        title = request.args.get(News.TITLE, type=str, default=None)
+        text = request.args.get(News.TEXT, type=str, default=None)
+        motd = request.args.get(News.MOTD, type=str, default=None)
+        facility_id = request.args.get(News.FACILITY_ID, type=str, default=None)
+        older = request.args.get(News.OLDER, type=int, default=sys.maxsize)
+        newer = request.args.get(News.NEWER, type=int, default=-sys.maxsize)
+        return News.get_all_queries(news_id, author, title, text, motd, tags, facility_id, older, newer)
 
 
 class Tag(Base):
