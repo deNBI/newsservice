@@ -2,7 +2,7 @@ from newsservice.db import db_session
 from newsservice.models import News
 from newsservice.auth import auth
 
-from flask import (Blueprint, request, json, jsonify)
+from flask import (Blueprint, request, json, jsonify, current_app)
 from newsservice.db import init_db
 
 bp = Blueprint('requests', __name__)
@@ -20,13 +20,13 @@ def save():
     try:
         article_json = json.loads(request.data.decode('utf-8'))['news']
     except Exception as e:
-        print(e)
+        current_app.logger.exception(e)
 
     if article_json is None:
         try:
             article_json = request.json['news']
         except Exception as e:
-            print(e)
+            current_app.logger.exception(e)
             return "Something went wrong in reading the request. Returning."
 
     title = article_json[News.TITLE]
@@ -52,8 +52,8 @@ def save():
     try:
         article = News(title, author, text, tag, fids, motd)
     except Exception as e:
-        print(e)
-        return "Exception when creating News: {0}".format(e)
+        current_app.logger.exception(e)
+        return "Exception when creating News."
 
     facility_id_no_list = check_if_all_facilities_true(fids, token)
     if not facility_id_no_list:
@@ -72,7 +72,7 @@ def delete():
         news_id = json.loads(request.data.decode('utf-8'))[News.ID]
         token = json.loads(request.data.decode('utf-8'))[News.TOKEN]
     except Exception as e:
-        print(e)
+        current_app.logger.exception(e)
 
     if news_id is None or token is None:
         try:
@@ -81,7 +81,7 @@ def delete():
             if news_id is None or token is None:
                 return 'No news id or token found in request.'
         except Exception as e:
-            print(e)
+            current_app.logger.exception(e)
             return "Something went wrong in reading the request. Returning."
 
     article = News.query.filter(News.id == news_id).first()
@@ -116,7 +116,7 @@ def patch():
         fids = json.loads(request.data.decode('utf-8'))[News.FACILITY_ID]
         token = json.loads(request.data.decode('utf-8'))[News.TOKEN]
     except Exception as e:
-        print(e)
+        current_app.logger.exception(e)
 
     if news_id is None or token is None or title is None or text is None or tag is None or fids is None:
         try:
@@ -131,7 +131,7 @@ def patch():
                     or text is None or tag is None or fids is None:
                 return 'No news id or token or title or text or tag or facility id found in request.'
         except Exception as e:
-            print(e)
+            current_app.logger.exception(e)
             return "Something went wrong in reading the request. Returning without patching."
 
     article = News.query.filter(News.id == news_id).first()

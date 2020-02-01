@@ -1,11 +1,10 @@
-import sys
 from datetime import datetime
 
 from sqlalchemy import Column, Integer, String, Table, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 
 from newsservice.db import Base
-
+from flask import current_app
 
 news_tag = Table('news_tag', Base.metadata,
                  Column('news_id', Integer, ForeignKey('news.id'), primary_key=True),
@@ -55,7 +54,7 @@ class News(Base):
                 else:
                     self.tag.append(Tag(new_tag))
             except Exception as e:
-                print(e)
+                current_app.logger.exception(e)
         for new_facility in facility_id:
             try:
                 existing_facility = Facility.query.filter_by(facility_id=new_facility).all()
@@ -64,7 +63,7 @@ class News(Base):
                 else:
                     self.facilityid.append(Facility(new_facility))
             except Exception as e:
-                print(e)
+                current_app.logger.exception(e)
 
     @property
     def serialize(self):
@@ -97,7 +96,7 @@ class News(Base):
                 else:
                     self.tag.append(Tag(new_tag))
             except Exception as e:
-                print(e)
+                current_app.logger.exception(e)
         for new_facility in facility_id:
             try:
                 existing_facility = Facility.query.filter_by(facility_id=new_facility).all()
@@ -106,7 +105,7 @@ class News(Base):
                 else:
                     self.facilityid.append(Facility(new_facility))
             except Exception as e:
-                print(e)
+                current_app.logger.exception(e)
 
     @staticmethod
     def get_tag_queries(tags):
@@ -123,14 +122,18 @@ class News(Base):
         for search_facility_id in facility_id:
             try:
                 search_facility_id = int(search_facility_id)
-            except:
+            except Exception as e:
+                current_app.logger\
+                    .warning('Failed converting facility id {0} to integer, setting to -1. Exception log:'
+                             .format(search_facility_id))
+                current_app.logger.exception(e)
                 search_facility_id = -1
             queries.append(News.facilityid.any(facility_id=search_facility_id))
         return queries
 
     @staticmethod
     def get_all_queries(news_id=None, author=None, title=None, text=None, motd=None, tags=None, facility_id=None,
-                        older=sys.maxsize, newer=-sys.maxsize):
+                        older=datetime.max, newer=datetime.min):
         queries = []
         if author is not None:
             queries.append(News.author.contains(author))
@@ -159,8 +162,8 @@ class News(Base):
         text = request.args.get(News.TEXT, type=str, default=None)
         motd = request.args.get(News.MOTD, type=str, default=None)
         facility_id = request.args.get(News.FACILITY_ID, type=str, default=None)
-        older = request.args.get(News.OLDER, type=int, default=sys.maxsize)
-        newer = request.args.get(News.NEWER, type=int, default=-sys.maxsize)
+        older = request.args.get(News.OLDER, type=str, default=datetime.max)
+        newer = request.args.get(News.NEWER, type=str, default=datetime.min)
         return News.get_all_queries(news_id, author, title, text, motd, tags, facility_id, older, newer)
 
 

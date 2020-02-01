@@ -1,7 +1,7 @@
 from flask import render_template
 
 from newsservice.models import News
-from flask import (Blueprint, request)
+from flask import (Blueprint, request, current_app)
 
 import requests
 
@@ -55,6 +55,7 @@ def render():
         .order_by(News.id.desc())\
         .limit(30)\
         .all()
+    articles = [i.serialize for i in articles]
 
     return render_template("index.html", news=articles, cc_sites=None)
 
@@ -65,12 +66,14 @@ def render_tag(tags):
         .filter(*News.get_tag_queries(tags)) \
         .order_by(News.id.desc()) \
         .all()
+    articles = [i.serialize for i in articles]
     return render_template("index.html", news=articles, cc_sites=None)
 
 
 @bp.route('/id/<id>')
 def render_id(id):
     articles = News.query.filter(News.id == id).all()
+    articles = [i.serialize for i in articles]
     return render_template("index.html", news=articles, cc_sites=None)
 
 
@@ -84,4 +87,5 @@ def render_facility(facility_id):
         .filter(*News.get_facility_queries(facility_id)) \
         .order_by(News.id.desc()) \
         .all()
+    articles = [i.serialize for i in articles]
     return render_template("index.html", news=articles, cc_sites=None)
