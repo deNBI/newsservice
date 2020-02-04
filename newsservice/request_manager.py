@@ -2,7 +2,7 @@ from newsservice.db import db_session
 from newsservice.models import News
 from newsservice.auth import auth
 
-from flask import (Blueprint, request, json, jsonify)
+from flask import (Blueprint, request, json, jsonify, current_app)
 from newsservice.db import init_db
 
 bp = Blueprint('requests', __name__)
@@ -20,30 +20,47 @@ def save():
     try:
         article_json = json.loads(request.data.decode('utf-8'))['news']
     except Exception as e:
-        print(e)
+        current_app.logger.exception(e)
 
     if article_json is None:
         try:
             article_json = request.json['news']
         except Exception as e:
-            print(e)
+            current_app.logger.exception(e)
             return "Something went wrong in reading the request. Returning."
 
-    if article_json[News.TITLE].strip() and article_json[News.AUTHOR].strip() \
-            and article_json[News.TEXT].strip() and article_json[News.TAG] \
-            and article_json[News.FACILITY_ID] and article_json[News.TOKEN].strip():
-        article = News(article_json[News.TITLE], article_json[News.AUTHOR], article_json[News.TEXT],
-                       article_json[News.TAG], article_json[News.FACILITY_ID])
-    else:
-        return "No empty fields are allowed in the JSON document."
+    title = article_json[News.TITLE]
+    author = article_json[News.AUTHOR]
+    text = article_json[News.TEXT]
+    tag = article_json[News.TAG]
+    fids = article_json[News.FACILITY_ID]
+    motd = article_json[News.MOTD]
+    token = article_json[News.TOKEN]
+    if title is None or not title.strip():
+        return "No Title found in JSON"
+    if author is None or not author.strip():
+        return "No Author found in JSON"
+    if text is None or not text.strip():
+        return "No Text found in JSON"
+    if tag is None or not tag:
+        return "No tags found in JSON"
+    if fids is None or not fids:
+        return "No facility IDS found in JSON"
+    if token is None or not token.strip():
+        return "No perun login token found in JSON"
 
-    facility_id_no_list = check_if_all_facilities_true(article_json[News.FACILITY_ID], article_json[News.TOKEN])
+    try:
+        article = News(title, author, text, tag, fids, motd)
+    except Exception as e:
+        current_app.logger.exception(e)
+        return "Exception when creating News."
+
+    facility_id_no_list = check_if_all_facilities_true(fids, token)
     if not facility_id_no_list:
         db_session.add(article)
         db_session.commit()
-        return "The article: '{0}' was added.".format(article_json[News.TITLE])
+        return "The article: '{0}' was added.".format(title)
     else:
-        #return 'The news was not posted, as you dont have the permission to post to these facilities: ' + ','.join(facility_id_no_list)
         return 'Not posted. Authentication failed for: {0}'.format(','.join(facility_id_no_list))
 
 
@@ -55,7 +72,7 @@ def delete():
         news_id = json.loads(request.data.decode('utf-8'))[News.ID]
         token = json.loads(request.data.decode('utf-8'))[News.TOKEN]
     except Exception as e:
-        print(e)
+        current_app.logger.exception(e)
 
     if news_id is None or token is None:
         try:
@@ -64,11 +81,9 @@ def delete():
             if news_id is None or token is None:
                 return 'No news id or token found in request.'
         except Exception as e:
-            print(e)
+            current_app.logger.exception(e)
             return "Something went wrong in reading the request. Returning."
 
-    #news_id = request.args.get(News.ID, None)
-    #token = request.args.get(News.TOKEN, None)
     article = News.query.filter(News.id == news_id).first()
     if article is None:
         return 'No article found.'
@@ -88,6 +103,7 @@ def patch():
     news_id = None
     title = None
     text = None
+    motd = None
     tag = None
     fids = None
     token = None
@@ -95,32 +111,37 @@ def patch():
         news_id = json.loads(request.data.decode('utf-8'))[News.ID]
         title = json.loads(request.data.decode('utf-8'))[News.TITLE]
         text = json.loads(request.data.decode('utf-8'))[News.TEXT]
+        motd = json.loads(request.data.decode('utf-8'))[News.MOTD]
         tag = json.loads(request.data.decode('utf-8'))[News.TAG]
         fids = json.loads(request.data.decode('utf-8'))[News.FACILITY_ID]
         token = json.loads(request.data.decode('utf-8'))[News.TOKEN]
     except Exception as e:
-        print(e)
+        current_app.logger.exception(e)
 
     if news_id is None or token is None or title is None or text is None or tag is None or fids is None:
         try:
             news_id = request.json[News.ID]
             title = request.json[News.TITLE]
             text = request.json[News.TEXT]
+            motd = request.json[News.MOTD]
             tag = request.json[News.TAG]
             fids = request.json[News.FACILITY_ID]
             token = request.json[News.TOKEN]
-            if news_id is None or token is None or title is None or text is None or tag is None or fids is None:
+            if news_id is None or token is None or title is None \
+                    or text is None or tag is None or fids is None:
                 return 'No news id or token or title or text or tag or facility id found in request.'
         except Exception as e:
-            print(e)
-            return "Something went wrong in reading the request. Returning."
+            current_app.logger.exception(e)
+            return "Something went wrong in reading the request. Returning without patching."
 
     article = News.query.filter(News.id == news_id).first()
     if article is None:
-        return 'No article found.'
+        return 'No article found with id {0}.'.format(news_id)
     news_facility_ids = check_if_all_facilities_true([facility.facility_id for facility in article.facilityid], token)
     if not news_facility_ids or len(news_facility_ids) == 0:
-        article.update(title, text, tag, fids)
+        if motd is None or not motd.strip():
+            motd = None
+        article.update(title, text, motd, tag, fids)
         db_session.commit()
         return "The article: '{0}' was patched.".format(article.title)
     else:
@@ -143,34 +164,88 @@ def request_latest_news_by_tag(tags):
         .filter(*News.get_tag_queries(tags)) \
         .order_by(News.id.desc()) \
         .first()
-    if request.content_type == 'application/json':
-        if article is None:
-            return {}
-        return json.dumps(dict(title=article.title, text=article.text,
-                               author=article.author, time=article.time))
-    else:
-        if article is None:
-            return ''
-        return '{0}\n{1}\nBy {2} on {3}\n'.format(article.title, article.text, article.author, article.time)
+    return format_latest_article(article, request.content_type)
+
+
+@bp.route('/<tags>/latest/motd')
+def request_latest_news_by_tag_as_motd(tags):
+    article = News.query \
+        .filter(*News.get_tag_queries(tags)) \
+        .order_by(News.id.desc()) \
+        .first()
+    return format_latest_article_as_motd(article, request.content_type)
 
 
 @bp.route('/latest', methods=['GET'])
-def request_latest_news_as_string():
+def request_latest_news():
     """
     This Method queries the last item of the database and convert it to a string.
     :return: A String with the last item of the database
     """
     article = News.query.order_by(News.id.desc()).first()
-    if request.content_type == 'application/json':
+    return format_latest_article(article, request.content_type)
+
+
+@bp.route('/latest/motd', methods=['GET'])
+def request_latest_news_as_motd():
+    """
+    This Method queries the last item of the database and convert it to a string.
+    :return: A String with the last item of the database
+    """
+    article = News.query.order_by(News.id.desc()).first()
+    return format_latest_article_as_motd(article, request.content_type)
+
+
+@bp.route('/<id>/formatted')
+def request_formatted_news_by_id(id):
+    article = News.query.filter(News.id == id).first()
+    return format_latest_article(article, request.content_type)
+
+
+@bp.route('/<id>/formatted/motd')
+def request_formatted_news_by_id_as_motd(id):
+    article = News.query.filter(News.id == id).first()
+    return format_latest_article_as_motd(article, request.content_type)
+
+
+def format_latest_article(article, content_type):
+    if content_type == 'application/json':
         if article is None:
             return {}
-        return json.dumps(dict(title=article.title, text=article.text,
-                               author=article.author, time=article.time))
+        else:
+            return json.dumps(dict(title=article.title, text=article.text,
+                                   author=article.author, time=article.time.strftime('%Y-%m-%d %H:%M:%S')))
     else:
         if article is None:
-            return 'NA'
+            return ''
+        else:
+            return '{0}\n{1}\nBy {2} on {3}\n' \
+                .format(article.title, article.text, article.author, article.time.strftime('%Y-%m-%d %H:%M:%S'))
 
-        return '{0}\n{1}\nBy {2} on {3}\n'.format(article.title, article.text, article.author, article.time)
+
+def format_latest_article_as_motd(article, content_type):
+    if content_type == 'application/json':
+        if article is None:
+            return {}
+        news_link = 'https://cloud.denbi.de/news/id/{0}'.format(article.id)
+        if article.motd is not None and article.motd.strip():
+            return json.dumps(dict(title=article.title, text=article.motd,
+                                   author=article.author, time=article.time.strftime('%Y-%m-%d %H:%M:%S'),
+                                   news_link=news_link))
+        else:
+            return json.dumps(dict(title=article.title, text=article.text,
+                                   author=article.author, time=article.time.strftime('%Y-%m-%d %H:%M:%S'),
+                                   news_link=news_link))
+    else:
+        if article is None:
+            return 'Article not found!'
+        news_link = 'https://cloud.denbi.de/news/id/{0}'.format(article.id)
+        if article.motd is not None and article.motd.strip():
+            return '{0}\nSee the full news: {1}\n{2}\n' \
+                .format(article.motd, news_link, article.time.strftime('%Y-%m-%d %H:%M:%S'))
+        else:
+            return '{0}\nSee the full news: {1}\n{2}\n' \
+                .format(article.text, news_link, article.time.strftime('%Y-%m-%d %H:%M:%S'))
 
 
 def check_if_all_facilities_true(facilityids, token):
