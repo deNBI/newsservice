@@ -1,5 +1,5 @@
 import os
-
+import logging
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
 
 from newsservice.db import db_session, init_db
@@ -18,11 +18,12 @@ def create_app(config_path=None):
     :param config_path: Path to config. Will overwrite default config.
     :return: Returns the Flask Application
     """
-
     # create and configure the app
     app = Flask(__name__, instance_relative_config=True)
     Bootstrap(app)
-
+    gunicorn_logger = logging.getLogger('gunicorn.error')
+    app.logger.handlers = gunicorn_logger.handlers
+    app.logger.setLevel(logging.DEBUG)
     init_db()
 
     config_flask(app, config_path)

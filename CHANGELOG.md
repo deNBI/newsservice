@@ -1,3 +1,11 @@
+##  (2020-02-07)
+
+
+#### Features
+
+* **app:**  add logging, log files, fix request function ([7afa7203](7afa7203))
+* **motd:**  add, get, patch motd ([72fcf154](72fcf154))
+
 ##  (2020-01-15)
 
 
