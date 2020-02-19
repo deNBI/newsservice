@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, String, Table, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, Table, ForeignKey, DateTime, func
 from sqlalchemy.orm import relationship
 
 from newsservice.db import Base
@@ -112,7 +112,7 @@ class News(Base):
         queries = []
         tags = tags.split(',')
         for search_tag in tags:
-            queries.append(News.tag.any(name=search_tag))
+            queries.append(News.tag.any(func.lower(Tag.name) == func.lower(search_tag)))
         return queries
 
     @staticmethod
