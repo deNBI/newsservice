@@ -1,3 +1,10 @@
+##  (2020-02-21)
+
+#### Bug Fixes
+
+* **Queries:** tag searching now case insensitive 
+
+
 ##  (2020-02-07)
 
 
